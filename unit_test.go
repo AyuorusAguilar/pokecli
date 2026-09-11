@@ -9,6 +9,7 @@ func TestCleanInput(te *testing.T)  {
 
 	cases := []test{
 		{input: "Ismael Manzanero", expectedOutput: []string{"ismael", "manzanero"}},
+		{input: "", expectedOutput: []string{}},
 		{input: "    Ismael Manzanero     ", expectedOutput: []string{"ismael", "manzanero"}},
 		{input: "IsmaelManzanero", expectedOutput: []string{"ismaelmanzanero"}},
 		{input: "I s m a e l", expectedOutput: []string{"i", "s", "m", "a", "e", "l"}},
