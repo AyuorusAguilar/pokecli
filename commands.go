@@ -12,9 +12,9 @@ import (
 )
 
 type cliCommand struct {
-	name string
+	name        string
 	description string
-	callback func(*config, *pokecache.Cache, []string) error
+	callback    func(*config, *pokecache.Cache, []string) error
 }
 
 func commandExit(c *config, cach *pokecache.Cache, args []string) error {
@@ -30,14 +30,16 @@ func commandHelp(c *config, cach *pokecache.Cache, args []string) error {
 	}
 	return nil
 }
+
 type responseMap struct {
-	Count   int `json:"count"`
-	Next   string `json:"next"`
-	Prev   string `json:"previous"`
+	Count   int    `json:"count"`
+	Next    string `json:"next"`
+	Prev    string `json:"previous"`
 	Results []struct {
 		Name string `json:"name"`
 	} `json:"results"`
 }
+
 func commandMap(c *config, cach *pokecache.Cache, _ []string) error {
 	var respContainer responseMap
 	var endpoint string = "location-area"
@@ -49,11 +51,10 @@ func commandMap(c *config, cach *pokecache.Cache, _ []string) error {
 			return err
 		}
 	}
-	
 
-	fmt.Printf("Showing from %d to %d of %d areas:\n", c.mapOffsetnext, c.mapOffsetnext + 19, respContainer.Count)
+	fmt.Printf("Showing from %d to %d of %d areas:\n", c.mapOffsetnext, c.mapOffsetnext+19, respContainer.Count)
 	for i, area := range respContainer.Results {
-		fmt.Printf("  %d. %s\n", c.mapOffsetnext + i, area.Name)
+		fmt.Printf("  %d. %s\n", c.mapOffsetnext+i, area.Name)
 	}
 
 	var erro error
@@ -83,7 +84,7 @@ func commandMapb(c *config, cach *pokecache.Cache, _ []string) error {
 		}
 	}
 
-	fmt.Printf("Showing from %d to %d of %d areas:\n", c.mapOffsetprev, c.mapOffsetprev + 19, respContainer.Count)
+	fmt.Printf("Showing from %d to %d of %d areas:\n", c.mapOffsetprev, c.mapOffsetprev+19, respContainer.Count)
 	for i, area := range respContainer.Results {
 		fmt.Printf("  %d. %s\n", c.mapOffsetprev+i, area.Name)
 	}
@@ -125,14 +126,14 @@ func getOffsetValue(url string) (int, error) {
 
 type responseArea struct {
 	Pokemons []struct {
-		Pokemon struct{
+		Pokemon struct {
 			Name string `json:"name"`
 		} `json:"pokemon"`
 	} `json:"pokemon_encounters"`
 }
 
 func commandExplore(c *config, cach *pokecache.Cache, area []string) error {
-	
+
 	var respContainer responseArea
 	var endpoint string = fmt.Sprintf("location-area/%s", area[0])
 	var args string
@@ -146,22 +147,22 @@ func commandExplore(c *config, cach *pokecache.Cache, area []string) error {
 
 	fmt.Printf("Showing all available pokemons in %s\n", area[0])
 	for i, entry := range respContainer.Pokemons {
-		fmt.Printf("  %d.\t%s\n", i + 1, entry.Pokemon.Name)
+		fmt.Printf("  %d.\t%s\n", i+1, entry.Pokemon.Name)
 	}
 	return nil
 }
 
 type Pokemon struct {
-	Name 			string	`json:"name"`
-	BaseExp			int 	`json:"base_experience"`
-    Height			int 	`json:"height"`
-    Weight 			int 	`json:"weight"`
-	Stats []struct {
-		Value 		int 	`json:"base_stat"`
-		Info struct{
-			Name 	string 	`json:"name"`
-		}					`json:"stat"`
-	} 						`json:"stats"`
+	Name    string `json:"name"`
+	BaseExp int    `json:"base_experience"`
+	Height  int    `json:"height"`
+	Weight  int    `json:"weight"`
+	Stats   []struct {
+		Value int `json:"base_stat"`
+		Info  struct {
+			Name string `json:"name"`
+		} `json:"stat"`
+	} `json:"stats"`
 }
 
 func commandCatch(c *config, cach *pokecache.Cache, pokemon []string) error {
@@ -182,6 +183,37 @@ func commandCatch(c *config, cach *pokecache.Cache, pokemon []string) error {
 	if catch {
 		c.catchedPokemons[name] = respContainer
 		fmt.Printf("%s was caught!\n", name)
+	} else {
+		fmt.Printf("%s escaped!\n", name)
+	}
+	return nil
+}
+func commandInspect(c *config, _ *pokecache.Cache, pokemon []string) error {
+	name := pokemon[0]
+
+	if pokemon, ok := c.catchedPokemons[name]; ok {
+		fmt.Printf("Displaying all info of %s:\n", pokemon.Name)
+		fmt.Printf("\tName:\t\t\t%s\n", pokemon.Name)
+		fmt.Printf("\tBase experience:\t%d\n", pokemon.BaseExp)
+		fmt.Printf("\tHeight:\t\t\t%d\n", pokemon.Height)
+		fmt.Printf("\tWeight:\t\t\t%d\n", pokemon.Weight)
+		fmt.Printf("\tStats:\n")
+		for _, stat := range pokemon.Stats {
+			fmt.Printf("\t\t%s: %d\n", stat.Info.Name, stat.Value)
+		}
+		return nil
+	}
+	fmt.Printf("Info missing! You haven't catched %s yet!\n", name)
+	return nil
+}
+func commandPokedex(c *config, _ *pokecache.Cache, _ []string) error {
+	if len(c.catchedPokemons) < 1 {
+		fmt.Print("You haven't catch any Pokemon\n")
+	} else {
+		fmt.Print("Listing all catched Pokemons:\n")
+		for _, pok := range c.catchedPokemons {
+			fmt.Printf("\t- %s\n", pok.Name)
+		}
 	}
 	return nil
 }

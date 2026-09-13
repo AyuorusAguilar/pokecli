@@ -1,6 +1,7 @@
 Welcome to the Pokedex!
+Pokecli > You haven't catch any Pokemon
 Pokecli > Throwing a Pokeball at tangela...
 tangela was caught!
-Pokecli >   An error has ocurred!:
-    Pokemon or city not found, please type a valid name!
+Pokecli > Listing all catched Pokemons:
+	- tangela
 Pokecli > 
