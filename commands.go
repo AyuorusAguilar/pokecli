@@ -3,18 +3,26 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+
 	"github.com/AyuorusAguilar/pokecli/internal/pokecache"
 )
 
-func commandExit(c *config, cach *pokecache.Cache) error {
+type cliCommand struct {
+	name string
+	description string
+	callback func(*config, *pokecache.Cache, []string) error
+}
+
+func commandExit(c *config, cach *pokecache.Cache, args []string) error {
 	fmt.Print("Closing the Pokedex... Goodbye!\n")
 	os.Exit(0)
 	return nil
 }
-func commandHelp(c *config, cach *pokecache.Cache) error {
+func commandHelp(c *config, cach *pokecache.Cache, args []string) error {
 	fmt.Print("Using the Pokecli is super easy! Here are the commands you can use!\n")
 	fmt.Print("Usage:\n")
 	for _, com := range c.commandList {
@@ -30,8 +38,7 @@ type responseMap struct {
 		Name string `json:"name"`
 	} `json:"results"`
 }
-func commandMap(c *config, cach *pokecache.Cache) error {
-
+func commandMap(c *config, cach *pokecache.Cache, _ []string) error {
 	var respContainer responseMap
 	var endpoint string = "location-area"
 	var args string = fmt.Sprintf("offset=%d&limit=20", c.mapOffsetnext)
@@ -64,7 +71,7 @@ func commandMap(c *config, cach *pokecache.Cache) error {
 	}
 	return nil
 }
-func commandMapb(c *config, cach *pokecache.Cache) error {
+func commandMapb(c *config, cach *pokecache.Cache, _ []string) error {
 	var respContainer responseMap
 	var endpoint string = "location-area"
 	var args string = fmt.Sprintf("offset=%d&limit=20", c.mapOffsetprev)
@@ -114,4 +121,67 @@ func getOffsetValue(url string) (int, error) {
 		return 0, fmt.Errorf("Invalid url")
 	}
 	return val, nil
+}
+
+type responseArea struct {
+	Pokemons []struct {
+		Pokemon struct{
+			Name string `json:"name"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+}
+
+func commandExplore(c *config, cach *pokecache.Cache, area []string) error {
+	
+	var respContainer responseArea
+	var endpoint string = fmt.Sprintf("location-area/%s", area[0])
+	var args string
+
+	if !checkForCache(cach, endpoint+args, &respContainer) {
+		err := genericPokeApiCall(endpoint, args, &respContainer, cach)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Showing all available pokemons in %s\n", area[0])
+	for i, entry := range respContainer.Pokemons {
+		fmt.Printf("  %d.\t%s\n", i + 1, entry.Pokemon.Name)
+	}
+	return nil
+}
+
+type Pokemon struct {
+	Name 			string	`json:"name"`
+	BaseExp			int 	`json:"base_experience"`
+    Height			int 	`json:"height"`
+    Weight 			int 	`json:"weight"`
+	Stats []struct {
+		Value 		int 	`json:"base_stat"`
+		Info struct{
+			Name 	string 	`json:"name"`
+		}					`json:"stat"`
+	} 						`json:"stats"`
+}
+
+func commandCatch(c *config, cach *pokecache.Cache, pokemon []string) error {
+	name := pokemon[0]
+	var respContainer Pokemon
+	var endpoint string = fmt.Sprintf("/pokemon/%s/", name)
+	var args string
+
+	if !checkForCache(cach, endpoint+args, &respContainer) {
+		err := genericPokeApiCall(endpoint, args, &respContainer, cach)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", name)
+	catch := (rand.Intn(255) + 40) > respContainer.BaseExp
+	if catch {
+		c.catchedPokemons[name] = respContainer
+		fmt.Printf("%s was caught!\n", name)
+	}
+	return nil
 }

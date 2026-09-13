@@ -30,6 +30,9 @@ func genericPokeApiCall(endpoint string, args string, destPointer any, cachconta
 	if err != nil {
 		return err
 	}
+	if res.StatusCode == 404 {
+		return fmt.Errorf("    Pokemon or city not found, please type a valid name!\n")
+	}
 	
 	baits, err := io.ReadAll(res.Body)
 	if err != nil {

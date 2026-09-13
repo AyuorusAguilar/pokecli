@@ -32,7 +32,7 @@ func main(){
 		cleanIn := cleanInput(input)
 
 		if com, ok := conf.commandList[cleanIn[0]]; ok {
-			err := com.callback(conf, cache)
+			err := com.callback(conf, cache, cleanIn[1:])
 			if err != nil {
 				fmt.Printf("  An error has ocurred!:\n%v", err)
 			}
